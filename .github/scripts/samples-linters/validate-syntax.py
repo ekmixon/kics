@@ -73,8 +73,7 @@ def create_temporary_copy(path):
     tmp_path = os.path.join(tmp_dir, os.path.basename(path))
     if args.verbose > 1:
         print('creating temporary copy', tmp_path)
-    copy_r = shutil.copy2(path, tmp_path)
-    return copy_r
+    return shutil.copy2(path, tmp_path)
 
 
 def expand_files():
@@ -190,7 +189,7 @@ def main():
     ###########################################
     #                list errors              #
     ###########################################
-    if len(error_files) > 0:
+    if error_files:
         print("\n###### ERRORS #######")
         for error_obj in error_files:
             print(error_obj)

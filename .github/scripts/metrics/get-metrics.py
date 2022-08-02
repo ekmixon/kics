@@ -43,27 +43,23 @@ def queries_count(path):
     rtn_count = 0
     with open(path) as fp:
         metadata_obj = json.load(fp)
-        if 'aggregation' in metadata_obj:
-            rtn_count = metadata_obj['aggregation']
-        else:
-            rtn_count = 1
+        rtn_count = metadata_obj['aggregation'] if 'aggregation' in metadata_obj else 1
     return rtn_count
 
 
 for key, value in queries_path.items():
     metadata_path = os.path.join(value, 'metadata.json')
-    platform_count = sum([queries_count(path)
-                         for path in glob.glob(metadata_path)])
+    platform_count = sum(queries_count(path) for path in glob.glob(metadata_path))
     summary[f'{key}_queries'] = platform_count
     summary['total'] += platform_count
 
     rego_path = os.path.join(value, 'query.rego')
-    rego_summary[f'{key}_rego'] = len([path for path in glob.glob(rego_path)])
-    rego_summary['total'] += len([path for path in glob.glob(rego_path)])
+    rego_summary[f'{key}_rego'] = len(list(glob.glob(rego_path)))
+    rego_summary['total'] += len(list(glob.glob(rego_path)))
 
     for ext in samples_ext[key]:
         sample_path = os.path.join(value, 'test', f'*.{ext}')
-        ext_samples = len([path for path in glob.glob(sample_path)])
+        ext_samples = len(list(glob.glob(sample_path)))
         samples_summary[f'{key}_{ext}_samples'] = ext_samples
         samples_summary['total'] += ext_samples
 

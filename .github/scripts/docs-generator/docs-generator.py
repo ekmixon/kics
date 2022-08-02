@@ -26,30 +26,21 @@ def init_tree_path(dictionary, keys_per_level):
 
 
 def check_and_create_override_entry(meta_dict, template_dict):
-    if 'override' in meta_dict:
-        override = meta_dict['override']
-        for _, over_meta in override.items():
-            override_id = over_meta['id']
-            if 'platform' in over_meta:
-                over_platform = over_meta['platform']
-            else:
-                over_platform = platform
-            if 'severity' in over_meta:
-                over_severity = over_meta['severity']
-            else:
-                over_severity = severity
-            if 'category' in over_meta:
-                over_category = over_meta['category']
-            else:
-                over_category = category
+    if 'override' not in meta_dict:
+        return
+    override = meta_dict['override']
+    for _, over_meta in override.items():
+        override_id = over_meta['id']
+        over_platform = over_meta['platform'] if 'platform' in over_meta else platform
+        over_severity = over_meta['severity'] if 'severity' in over_meta else severity
+        over_category = over_meta['category'] if 'category' in over_meta else category
+        init_tree_path(template_dict, [
+            over_platform, sub_platform, over_severity, over_category])
 
-            init_tree_path(template_dict, [
-                over_platform, sub_platform, over_severity, over_category])
-
-            template_dict[platform][sub_platform][severity][category][override_id] = copy.deepcopy(
-                meta_dict)
-            for key, value in over_meta.items():
-                template_dict[platform][sub_platform][severity][category][override_id][key] = value
+        template_dict[platform][sub_platform][severity][category][override_id] = copy.deepcopy(
+            meta_dict)
+        for key, value in over_meta.items():
+            template_dict[platform][sub_platform][severity][category][override_id][key] = value
 
 
 arg_parser = argparse.ArgumentParser(description='Create query docs')
@@ -63,8 +54,7 @@ arg_parser.add_argument('-f', nargs='+', type=str, dest='formats',
                         help='Documentation formats to be created, the extension must exists in the template folder')
 parsed_args = vars(arg_parser.parse_args())
 
-parsed_args['formats'] = ['.%s' %
-                          f.lstrip('.') for f in parsed_args['formats']]
+parsed_args['formats'] = [f".{f.lstrip('.')}" for f in parsed_args['formats']]
 parsed_args['output_path'][0].mkdir(parents=True, exist_ok=True)
 all_metadata = parsed_args['input_path'][0].rglob('metadata.json')
 for path in all_metadata:
@@ -130,7 +120,9 @@ for file_format in parsed_args['formats']:
         general_data[platform] = data
 
         template_path = os.path.join(
-            parsed_args['templates_path'][0], 'platform_template' + file_format)
+            parsed_args['templates_path'][0], f'platform_template{file_format}'
+        )
+
         with open(template_path) as template:
             template_string = template.read()
             template_jinja = Template(template_string)
@@ -141,12 +133,15 @@ for file_format in parsed_args['formats']:
                 'colors': colors
             })
         output_filepath = os.path.join(
-            parsed_args['output_path'][0], platform.lower() + '-queries' + file_format)
+            parsed_args['output_path'][0],
+            f'{platform.lower()}-queries{file_format}',
+        )
+
         with open(output_filepath, 'w') as output:
             print(result, file=output)
             print(f'wrote {output_filepath}')
-        # create general table
-    with open(os.path.join(parsed_args['templates_path'][0], 'general_template' + file_format)) as template:
+            # create general table
+    with open(os.path.join(parsed_args['templates_path'][0], f'general_template{file_format}')) as template:
         template_string = template.read()
         template_jinja = Template(template_string)
         result = template_jinja.render({
@@ -154,7 +149,9 @@ for file_format in parsed_args['formats']:
             'colors': colors
         })
     output_filepath = os.path.join(
-        parsed_args['output_path'][0], 'all-queries' + file_format)
+        parsed_args['output_path'][0], f'all-queries{file_format}'
+    )
+
     with open(output_filepath, 'w') as output:
         print(result, file=output)
         print(f'wrote {output_filepath}')

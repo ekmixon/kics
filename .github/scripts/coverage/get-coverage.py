@@ -81,12 +81,13 @@ def load_coverage(args: Arguments) -> typing.List[LineStats]:
 def calc_file_stats(lines: typing.List[LineStats]) -> typing.List[FileStats]:
     lines = lines[:]
     def key(i): return i.filename
+
     lines.sort(key=key)
 
     out = []
     exclude = []
 
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/.coverageignore", "r") as fd:
+    with open(f"{os.path.dirname(os.path.realpath(__file__))}/.coverageignore", "r") as fd:
         for line in fd.read().splitlines():
             for name in glob.glob(line):
                 exclude.append(name)
@@ -103,20 +104,13 @@ def calc_file_stats(lines: typing.List[LineStats]) -> typing.List[FileStats]:
         group.sort(key=lambda i: i.line_to)
 
         f = FileStats(filepath=filename)
-        f.total_lines = sum([
-            i.count_covered
-            for i in group
-        ])
-        f.covered_lines = sum([
-            i.count_covered
-            for i in group
-            if i.covered
-        ])
-        f.uncovered_lines = sum([
-            i.count_covered
-            for i in group
-            if not i.covered
-        ])
+        f.total_lines = sum(i.count_covered for i in group)
+        f.covered_lines = sum(i.count_covered for i in group if i.covered)
+
+        f.uncovered_lines = sum(
+            i.count_covered for i in group if not i.covered
+        )
+
         out.append(f)
     return out
 
